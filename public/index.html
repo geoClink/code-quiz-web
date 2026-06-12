@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Quiz</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Setup Screen -->
+    <div id="screen-setup" class="screen active">
+        <div class="container">
+            <h1>Code Quiz</h1>
+            <p class="tagline">Get quizzed on your own GitHub code. Simulate a technical interview.</p>
+
+            <div class="privacy-notice">
+                Your keys are stored only in your browser. They are never saved to our server.
+            </div>
+
+            <div class="form-group">
+                <label>GitHub Personal Access Token</label>
+                <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
+            </div>
+
+            <div class="form-group">
+                <label>Groq API Key</label>
+                <input type="password" id="groq-key" placeholder="gsk_xxxxxxxxxxxx">
+            </div>
+
+            <button id="btn-connect" class="btn-primary">Connect</button>
+            <button id="btn-demo" class="btn-secondary">Try Demo</button>
+
+            <div id="connect-error" class="error hidden"></div>
+
+            <div class="key-links">
+                <a href="https://github.com/settings/tokens" target="_blank">Get GitHub token</a>
+                <a href="https://console.groq.com" target="_blank">Get Groq key</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repo Picker Screen -->
+    <div id="screen-repos" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button id="btn-back-setup" class="btn-back">← Back</button>
+                <h2>Pick a repo</h2>
+            </div>
+
+            <input type="text" id="repo-search" placeholder="Search repos..." class="search-input">
+
+            <div id="repo-list" class="repo-list"></div>
+        </div>
+    </div>
+
+    <!-- Quiz Settings Screen -->
+    <div id="screen-settings" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button id="btn-back-repos" class="btn-back">← Back</button>
+                <h2 id="settings-repo-name"></h2>
+            </div>
+
+            <div class="form-group">
+                <label>Focus on a specific file (optional)</label>
+                <select id="file-picker">
+                    <option value="">All files</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Difficulty</label>
+                <select id="difficulty">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate" selected>Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Topic focus (optional)</label>
+                <select id="topic">
+                    <option value="">Any topic</option>
+                    <option value="error handling">Error handling</option>
+                    <option value="data flow">Data flow</option>
+                    <option value="API design">API design</option>
+                    <option value="authentication">Authentication</option>
+                    <option value="performance">Performance</option>
+                    <option value="database design and queries">Database and queries</option>
+                    <option value="state management">State management</option>
+                    <option value="security">Security</option>
+                    <option value="testing and test coverage">Testing</option>
+                    <option value="async programming and concurrency">Async and concurrency</option>
+                    <option value="architecture and design patterns">Architecture</option>
+                    <option value="UI design and user experience decisions">UI and UX</option>
+                    <option value="third party integrations and external APIs">Third party integrations</option>
+                    <option value="caching strategies">Caching</option>
+                </select>
+            </div>
+
+            <button id="btn-start-quiz" class="btn-primary">Start Quiz</button>
+        </div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="screen-quiz" class="screen">
+        <div class="container">
+            <div class="quiz-header">
+                <div class="score-display">
+                    <span class="score correct-count">✓ <span id="count-correct">0</span></span>
+                    <span class="score partial-count">~ <span id="count-partial">0</span></span>
+                    <span class="score incorrect-count">✗ <span id="count-incorrect">0</span></span>
+                </div>
+                <div class="streak-display">🔥 <span id="streak-count">0</span></div>
+            </div>
+
+            <div id="demo-banner" class="demo-banner hidden">
+                Demo mode -- using a sample repo. Connect your own keys to quiz your own code.
+            </div>
+
+            <div class="question-card">
+                <div class="question-label">Question</div>
+                <div id="question-text" class="question-text"></div>
+            </div>
+
+            <textarea id="answer-input" placeholder="Type your answer here..." rows="4"></textarea>
+
+            <div class="quiz-actions">
+                <button id="btn-submit" class="btn-primary">Submit</button>
+                <button id="btn-hint" class="btn-secondary">Hint</button>
+                <button id="btn-flag" class="btn-secondary">Flag</button>
+            </div>
+
+            <div id="hint-panel" class="panel hidden">
+                <div class="panel-label">Hint</div>
+                <div id="hint-text"></div>
+            </div>
+
+            <div id="feedback-panel" class="panel hidden">
+                <div class="feedback-header">
+                    <div class="panel-label">Feedback</div>
+                    <div id="result-badge" class="result-badge"></div>
+                </div>
+                <div id="feedback-text"></div>
+                <button id="btn-explain" class="btn-secondary">Explain further</button>
+            </div>
+
+            <div id="explain-panel" class="panel hidden">
+                <div class="panel-label">Explanation</div>
+                <div id="explain-text"></div>
+            </div>
+
+            <div id="post-feedback-actions" class="hidden">
+                <button id="btn-next" class="btn-primary">Next Question</button>
+                <button id="btn-retry" class="btn-secondary">Try Again</button>
+                <button id="btn-end" class="btn-secondary">End Session</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Screen -->
+    <div id="screen-summary" class="screen">
+        <div class="container">
+            <h2>Session Complete</h2>
+
+            <div class="summary-stats">
+                <div class="stat-card correct">
+                    <div class="stat-number" id="summary-correct">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-card partial">
+                    <div class="stat-number" id="summary-partial">0</div>
+                    <div class="stat-label">Partial</div>
+                </div>
+                <div class="stat-card incorrect">
+                    <div class="stat-number" id="summary-incorrect">0</div>
+                    <div class="stat-label">Incorrect</div>
+                </div>
+            </div>
+
+            <div class="summary-streak">Best streak: <span id="summary-streak">0</span></div>
+
+            <div id="summary-questions" class="summary-questions"></div>
+
+            <div class="summary-actions">
+                <button id="btn-save-session" class="btn-primary">Save Session</button>
+                <button id="btn-new-session" class="btn-secondary">New Session</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
